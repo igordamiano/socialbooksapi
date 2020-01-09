@@ -2,12 +2,16 @@ package com.igor.socialbooks.resources;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,7 +57,11 @@ public class LivrosResources {
 		}
 		*/
 		Livro livro = livrosService.buscar(id);
-		return ResponseEntity.status(HttpStatus.OK).body(livro);
+		
+		// Criando cache
+		CacheControl cacheControl = CacheControl.maxAge(10, TimeUnit.SECONDS);
+		
+		return ResponseEntity.status(HttpStatus.OK).cacheControl(cacheControl).body(livro);
 	}
 	
 	@RequestMapping(value = "/{id}" ,method = RequestMethod.DELETE)
@@ -86,6 +94,10 @@ public class LivrosResources {
 	
 	@RequestMapping(value = "/{id}/comentarios", method = RequestMethod.POST)
 	public ResponseEntity<Void> adicionarComentario(@PathVariable("id") Long livroId, @RequestBody Comentario comentario) {
+		
+		// Usuário conectado
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		comentario.setUsuario(auth.getName());
 		
 		livrosService.salvarComentario(livroId, comentario);
 		
